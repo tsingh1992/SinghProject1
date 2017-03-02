@@ -82,11 +82,11 @@
           stickyElement.wrapAll(wrapper);
 
           if (o.center) {
-            stickyElement.parent().css({width:stickyElement.outerWidth(),marginLeft:"auto",marginRight:"auto"});
+            stickyElement.parent().css({width:stickyElement.outerWidth(),marginLeft:'auto',marginRight:'auto'});
           }
 
-          if (stickyElement.css("float") == "right") {
-            stickyElement.css({"float":"none"}).parent().css({"float":"right"});
+          if (stickyElement.css('float') == 'right') {
+            stickyElement.css({'float':'none'}).parent().css({'float':'right'});
           }
 
           var stickyWrapper = stickyElement.parent();

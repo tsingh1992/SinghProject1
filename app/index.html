@@ -29,6 +29,19 @@
 }
 
 </style>
+<style>
+
+formtwo {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  position: absolute;
+  left: 10px;
+  top: 10px;
+}
+
+label {
+  display: block;
+}
+</style>
 
 </head>
 
@@ -115,6 +128,7 @@
 			</div>
 
 		</div>
+		
 
 		<div class="container">
 
@@ -124,11 +138,144 @@
 		
             <div class="col-lg-8 col-lg-offset-2 animatedParent">		
 				<div class="text-center">
+				<formtwo>
+  <label><input type="radio" name="mode" value="grouped"> Grouped</label>
+  <label><input type="radio" name="mode" value="stacked" checked> Stacked</label>
+</formtwo>
+<svg width="700" height="500"></svg>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+var n = 4, // The number of series.
+    m = 58; // The number of values per series.
+
+// The xz array has m elements, representing the x-values shared by all series.
+// The yz array has n elements, representing the y-values of each of the n series.
+// Each yz[i] is an array of m non-negative numbers representing a y-value for xz[i].
+// The y01z array has the same structure as yz, but with stacked [y₀, y₁] instead of y.
+var xz = d3.range(m),
+    yz = d3.range(n).map(function() { return bumps(m); }),
+    y01z = d3.stack().keys(d3.range(n))(d3.transpose(yz)),
+    yMax = d3.max(yz, function(y) { return d3.max(y); }),
+    y1Max = d3.max(y01z, function(y) { return d3.max(y, function(d) { return d[1]; }); });
+
+var svg = d3.select("svg"),
+    margin = {top: 40, right: 10, bottom: 20, left: 10},
+    width = +svg.attr("width") - margin.left - margin.right,
+    height = +svg.attr("height") - margin.top - margin.bottom,
+    g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var x = d3.scaleBand()
+    .domain(xz)
+    .rangeRound([0, width])
+    .padding(0.08);
+
+var y = d3.scaleLinear()
+    .domain([0, y1Max])
+    .range([height, 0]);
+
+var color = d3.scaleOrdinal()
+    .domain(d3.range(n))
+    .range(d3.schemeCategory20c);
+
+var series = g.selectAll(".series")
+  .data(y01z)
+  .enter().append("g")
+    .attr("fill", function(d, i) { return color(i); });
+
+var rect = series.selectAll("rect")
+  .data(function(d) { return d; })
+  .enter().append("rect")
+    .attr("x", function(d, i) { return x(i); })
+    .attr("y", height)
+    .attr("width", x.bandwidth())
+    .attr("height", 0);
+
+rect.transition()
+    .delay(function(d, i) { return i * 10; })
+    .attr("y", function(d) { return y(d[1]); })
+    .attr("height", function(d) { return y(d[0]) - y(d[1]); });
+
+g.append("g")
+    .attr("class", "axis axis--x")
+    .attr("transform", "translate(0," + height + ")")
+    .call(d3.axisBottom(x)
+        .tickSize(0)
+        .tickPadding(6));
+
+d3.selectAll("input")
+    .on("change", changed);
+
+var timeout = d3.timeout(function() {
+  d3.select("input[value=\"grouped\"]")
+      .property("checked", true)
+      .dispatch("change");
+}, 2000);
+
+function changed() {
+  timeout.stop();
+  if (this.value === "grouped") transitionGrouped();
+  else transitionStacked();
+}
+
+function transitionGrouped() {
+  y.domain([0, yMax]);
+
+  rect.transition()
+      .duration(500)
+      .delay(function(d, i) { return i * 10; })
+      .attr("x", function(d, i) { return x(i) + x.bandwidth() / n * this.parentNode.__data__.key; })
+      .attr("width", x.bandwidth() / n)
+    .transition()
+      .attr("y", function(d) { return y(d[1] - d[0]); })
+      .attr("height", function(d) { return y(0) - y(d[1] - d[0]); });
+}
+
+function transitionStacked() {
+  y.domain([0, y1Max]);
+
+  rect.transition()
+      .duration(500)
+      .delay(function(d, i) { return i * 10; })
+      .attr("y", function(d) { return y(d[1]); })
+      .attr("height", function(d) { return y(d[0]) - y(d[1]); })
+    .transition()
+      .attr("x", function(d, i) { return x(i); })
+      .attr("width", x.bandwidth());
+}
+
+// Returns an array of m psuedorandom, smoothly-varying non-negative numbers.
+// Inspired by Lee Byron’s test data generator.
+// http://leebyron.com/streamgraph/
+function bumps(m) {
+  var values = [], i, j, w, x, y, z;
+
+  // Initialize with uniform random values in [0.1, 0.2).
+  for (i = 0; i < m; ++i) {
+    values[i] = 0.1 + 0.1 * Math.random();
+  }
+
+  // Add five random bumps.
+  for (j = 0; j < 5; ++j) {
+    x = 1 / (0.1 + Math.random());
+    y = 2 * Math.random() - 0.5;
+    z = 10 / (0.1 + Math.random());
+    for (i = 0; i < m; i++) {
+      w = (i / m - y) * z;
+      values[i] += x * Math.exp(-w * w);
+    }
+  }
+
+  // Ensure all values are positive.
+  for (i = 0; i < m; ++i) {
+    values[i] = Math.max(0, values[i]);
+  }
+
+  return values;
+}
+</script>
 					<p>
-					Lorem ipsum dolor sit amet, vis tale malis tacimates et, graece doctus omnesque ne est, deserunt pertinacia ne nam. Pro eu simul affert referrentur, natum mutat erroribus te his
-					</p>
-					<p>
-					Ne mundi fabulas corrumpit vim, nulla vivendum conceptam eu nam. Ius ex principes complectitur, ex quo duis suscipit. Ius fastidii reprimique no. Sadipscing appellantur pri ad. Oratio moderatius definitiones cum ex, mea ne brute vivendum percipitur. 
+				Objective: To be employed with a Professional Company that will use my skills and experience to fulfill their needs and achieve their goals.	
 					</p>
 					<a href="#service" class="btn btn-skin btn-scroll">and it begins..</a>
 				</div>
@@ -164,13 +311,12 @@
 		<div class="container">
 		<script src="//d3js.org/d3.v3.min.js"></script>
 		<script>
-
-var width = 1300,
+		var width = 1300,
     height = 300,
     radius = Math.min(width, height) / 2;
 
 var color = d3.scale.ordinal()
-    .range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+    .range(['#3399ff', '#ccffff', '#003399', '#3333cc', '#000099', '#00ccff', '#6699ff']);
 
 var arc = d3.svg.arc()
     .outerRadius(radius - 10)
@@ -180,27 +326,27 @@ var pie = d3.layout.pie()
     .sort(null)
     .value(function(d) { return d.population; });
 
-var svg = d3.select("body").append("svg")
-    .attr("width", width)
-    .attr("height", height)
-  .append("g")
-    .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+var svg = d3.select('body').append('svg')
+    .attr('width', width)
+    .attr('height', height)
+  .append('g')
+    .attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')');
 
-d3.csv("data.csv", type, function(error, data) {
+d3.csv('data.csv', type, function(error, data) {
   if (error) throw error;
 
-  var g = svg.selectAll(".arc")
+  var g = svg.selectAll('.arc')
       .data(pie(data))
-    .enter().append("g")
-      .attr("class", "arc");
+    .enter().append('g')
+      .attr('class', 'arc');
 
-  g.append("path")
-      .attr("d", arc)
-      .style("fill", function(d) { return color(d.data.age); });
+  g.append('path')
+      .attr('d', arc)
+      .style('fill', function(d) { return color(d.data.age); });
 
-  g.append("text")
-      .attr("transform", function(d) { return "translate(" + arc.centroid(d) + ")"; })
-      .attr("dy", ".35em")
+  g.append('text')
+      .attr('transform', function(d) { return 'translate(' + arc.centroid(d) + ')'; })
+      .attr('dy', '.35em')
       .text(function(d) { return d.data.age; });
 });
 
@@ -208,10 +354,9 @@ function type(d) {
   d.population = +d.population;
   return d;
 }
-
 </script>
 		
-
+<!-- Experiences -->
         <div class="row animatedParent">
             <div class="col-md-4">
 				<div class="animated rotateInDownLeft">
@@ -225,7 +370,8 @@ function type(d) {
 						<h5>Web Design</h5>
 						<div class="divider-header"></div>
 						<p>
-						Ad denique euripidis signiferumque vim, iusto admodum quo cu. No tritani neglegentur mediocritatem duo.
+						Capable of Full Stack Development. Effecient in MySql, HTML5, Ajax, PHP, Javascript, Bootstrap, CSS, E-Commerce, and Wordpress.
+						www.djsinghstylez.com, www.orlandocityliving.com
 						</p>
 						<a href="#" class="btn btn-skin">Learn more</a>
 					</div>
@@ -242,7 +388,7 @@ function type(d) {
 						<h5>Photography</h5>
 						<div class="divider-header"></div>
 						<p>
-						Ad denique euripidis signiferumque vim, iusto admodum quo cu. No tritani neglegentur mediocritatem duo.
+						As a Digital Media Major, gained Many experiences as a Free-Lance Photographer upon the web developing approach.
 						</p>
 						<a href="#" class="btn btn-skin">Learn more</a>
 					</div>
@@ -259,7 +405,7 @@ function type(d) {
 						<h5>Graphic design</h5>
 						<div class="divider-header"></div>
 						<p>
-						Ad denique euripidis signiferumque vim, iusto admodum quo cu. No tritani neglegentur mediocritatem duo.
+						Created graphics for many small companies throughout Central Florida. It is more of a hobby. Not effecient but deffinetely utilize this skill in developing websites.
 						</p>
 						<a href="#" class="btn btn-skin">Learn more</a>
 					</div>
@@ -271,7 +417,7 @@ function type(d) {
 		</div>
 		</div>
 	</section>
-	<!-- /Section: services -->
+	<!-- /Experiences -->
 	
 
 	<!-- Section: works -->
@@ -427,6 +573,9 @@ function type(d) {
   <script src="/bower_components/d3/d3.js"></script>
   <script src="/bower_components/fullpage.js/dist/jquery.fullpage.js"></script>
   <!-- endbower -->
+  <!-- endbuild -->
+  <!-- build:js scripts/main.js -->
+  <script src="scripts/main.js"></script>
   <!-- endbuild -->
 </body>
 
